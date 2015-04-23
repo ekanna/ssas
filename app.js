@@ -215,7 +215,7 @@ ssas.view = function(ctrl){
 var home = {}
 home.controller = function(){
 	var k = m.route().slice(1)
-	this.divId = k == "" ? "home": k
+	this.divId = k == "ssas" ? "home": k
 }
 home.view = function(ctrl){
 	return m.trust(document.getElementById(ctrl.divId).innerHTML)
@@ -223,7 +223,7 @@ home.view = function(ctrl){
 
 m.route.mode = "hash"
 m.route(document.getElementById("ssas"), "/", {
-	"/": home,
+	"/ssas": home,
 	"/calc": ssas,
 	"/faq": home,
 	"/form": home,
