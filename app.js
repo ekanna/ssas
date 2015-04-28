@@ -25,6 +25,9 @@ function calc(opts){
 	if ((inv > 150000) && (fr == 'Yearly')) {
 		return {status: 1, items: [], totals: {}, invpa: 0, message: "Yearly investment can't be more than Rs. 1,50,000"}
 	}
+	if ((inv < 1000) && (fr == 'Yearly')) {
+		return {status: 1, items: [], totals: {}, invpa: 0, message: "Yearly investment can't be less than Rs.1000/-"}
+	}
 	
 	var master = {
 		Monthly: {
