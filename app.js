@@ -15,6 +15,16 @@ function formatMoney(number, places, symbol, thousand, decimal) {
 function calc(opts){
 	var inv = opts.investment || 1000
 	var fr = opts.frequency || 'Monthly'
+
+	if (inv%100 != 0) {
+		return {status: 1, items:[], totals: {}, invpa: 0, message: "Please enter in multiples of 100"}
+	}
+	if ((inv > 12500) && (fr == 'Monthly')) {
+		return {status: 1, items: [], totals: {}, invpa: 0, message: "Mothly investment can't be more than Rs. 12,500 as total investment in a year can't be more than Rs. 1,50,000"}
+	}
+	if ((inv > 150000) && (fr == 'Yearly')) {
+		return {status: 1, items: [], totals: {}, invpa: 0, message: "Yearly investment can't be more than Rs. 1,50,000"}
+	}
 	
 	var master = {
 		Monthly: {
@@ -73,7 +83,7 @@ function calc(opts){
 		item[4] = formatMoney(item[4], 0, "₹", ",", ".");
 	})
 	
-	return {items: arr, totals: totals, invpa: invpa}
+	return {status: 0, items: arr, totals: totals, invpa: invpa}
 }
 
 var ssas = {}
@@ -112,98 +122,106 @@ function myTotals(arr){
 }
 
 ssas.view = function(ctrl){
+	
+	var myalert = ctrl.data.status == 1 ? m("div", {id: "alert", class: "alert alert-danger", role: "alert"}, ctrl.data.message): ""
 	return [
 		m("br"),
 		m("div", {class: "row"},[
 			m("div", {class: "col-md-6"}, [
-				m("form", [
-					m("div", {class: "form-group"}, [
-						m("label", {for: "investment"}, "Investment Amount"),
-						m("input", {class: "form-control", id: "investment", 
-							oninput: m.withAttr("value", ctrl.investment),
-							value: ctrl.invest()
-						})
-					]),	
-					m("div", {class: "form-group"}, [
-						m("label", {for: "frequency"}, "Investment Frequency"),
-						m("select", {class: "form-control", id: "frequency", onchange: m.withAttr("value", ctrl.frequency), value: ctrl.freq(),}, [
-							m("option", "Monthly"),
-							m("option", "Quarterly"),
-							m("option", "HalfYearly"),
-							m("option", "Yearly"),
+				m("div", {class: "panel panel-primary"}, [
+					m("div", {class: "panel-heading"}, "Input"),
+					m("div", {class: "panel-body"}, [
+						m("form", [
+							myalert,
+							m("div", {class: "form-group"}, [
+								m("label", {for: "investment"}, "Investment Amount"),
+								m("input", {class: "form-control", id: "investment", 
+									oninput: m.withAttr("value", ctrl.investment),
+									value: ctrl.invest()
+								})
+							]),	
+							m("div", {class: "form-group"}, [
+								m("label", {for: "frequency"}, "Investment Frequency"),
+								m("select", {class: "form-control", id: "frequency", onchange: m.withAttr("value", ctrl.frequency), value: ctrl.freq(),}, [
+									m("option", "Monthly"),
+									m("option", "Yearly"),
+								])
+							]),
+							m("div", {class: "form-group"}, [
+								m("label", {for: "interest"}, "Floating Rate of Interest"),
+								m("input", {class: "form-control", id: "interest", value: "9.2% p.a Compounding Yearly", disabled: true})
+							])	
 						])
-					]),
-					m("div", {class: "form-group"}, [
-						m("label", {for: "interest"}, "Floating Rate of Interest"),
-						m("input", {class: "form-control", id: "interest", value: "9.2% p.a Compounding Yearly", disabled: true})
-					]),	
-				]),
+					])
+				])
 			]),
 			m("div", {class: "col-md-6"}, [
-				m("table", {class: "table table-striped"}, [
-					m("thead", [
-						m("tr", [
-							m("th", "Particulars"),
-							m("th", "Amount"),
-						])
-					]),
-					m("tbody", [
-						m("tr", [
-							m("td", "Investment p.a"),
-							m("td", ctrl.data.invpa)
+				m("div", {class: "panel panel-primary"}, [
+					m("div", {class: "panel-heading"}, "Summary of Investment"),
+					m("table", {class: "table table-striped"}, [
+						m("tbody", [
+							m("tr", [
+								m("td", "Investment p.a"),
+								m("td", ctrl.data.invpa)
+							]),
+							m("tr", [
+								m("td", "No.of.Years"),
+								m("td", "14 Years")
+							]),
+							m("tr", [
+								m("td", "A. Total Investment"),
+								m("td", ctrl.data.totals.investTotal)
+							]),
+							m("tr", [
+								m("td", "Maturity Period"),
+								m("td", "21 Years")
+							]),
+							m("tr", [
+								m("td", "B. Total Interest"),
+								m("td", ctrl.data.totals.intTotal)
+							]),
 						]),
-						m("tr", [
-							m("td", "No.of.Years"),
-							m("td", "14 Years")
-						]),
-						m("tr", [
-							m("td", "A. Total Investment"),
-							m("td", ctrl.data.totals.investTotal)
-						]),
-						m("tr", [
-							m("td", "Maturity Period"),
-							m("td", "21 Years")
-						]),
-						m("tr", [
-							m("td", "B. Total Interest"),
-							m("td", ctrl.data.totals.intTotal)
-						]),
-						m("tr", [
-							m("td", "C. Maturity Value (A+B)"),
-							m("td", ctrl.data.totals.maturity)
+						m("tfoot", [
+							m("tr", [
+								m("th", {style: "bold"}, "C. Maturity Value (A+B)"),
+								m("th", {style: "bold"}, ctrl.data.totals.maturity)
+							])
 						])
 					])
 				])
 			])
 		]),
 
-		m("table", {class: "table table-striped"}, [
-			m("thead", [
-				m("tr", [
-					m("th", "Year"),
-					m("th", "Opening Balance"),
-					m("th", "Investment"),
-					m("th", "Interest Amt"),
-					m("th", "Closing Balance"),
-				])
-			]),
-			m("tbody", [
-				ctrl.data.items.map(function(item){
-					return m("tr", [
-						m("td", item[0]),
-						m("td", item[1]),
-						m("td", item[2]),
-						m("td", item[3]),
-						m("td", item[4]),
+		m("div", {class: "panel panel-primary"}, [
+			m("div", {class: "panel-heading"}, "Interest Calculation Working"),
+			m("table", {class: "table table-striped"}, [
+				m("thead", [
+					m("tr", [
+						m("th", "Year"),
+						m("th", "Opening Balance"),
+						m("th", "Investment"),
+						m("th", "Interest Amt"),
+						m("th", "Closing Balance"),
 					])
-				})
-			]),
-			m("tfoot", [
-				m("tr", [
-					m("th", {colspan: 2}, "Total"),
-					m("th", ctrl.data.totals.investTotal),
-					m("th", ctrl.data.totals.intTotal),
-					m("th", ctrl.data.totals.maturity),
+				]),
+				m("tbody", [
+					ctrl.data.items.map(function(item){
+						return m("tr", [
+							m("td", item[0]),
+							m("td", item[1]),
+							m("td", item[2]),
+							m("td", item[3]),
+							m("td", item[4]),
+						])
+					})
+				]),
+				m("tfoot", [
+					m("tr", [
+						m("th", {colspan: 2}, "Total"),
+						m("th", ctrl.data.totals.investTotal),
+						m("th", ctrl.data.totals.intTotal),
+						m("th", ctrl.data.totals.maturity),
+					])
 				])
 			])
 		])
